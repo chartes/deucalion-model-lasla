@@ -42,6 +42,7 @@ Example output :
 """
 from webapp import bind, Formatter
 from flask import Flask, render_template
+from pie.tagger import Tagger, simple_tokenizer
 import re
 
 app = Flask(__name__, static_folder="./statics", template_folder="./templates")
@@ -51,17 +52,55 @@ app = Flask(__name__, static_folder="./statics", template_folder="./templates")
 def form():
     return render_template("index.html")
 
+# Forms where the que should be kept
+QVE_NOT_REMOVE = ["quicumque", "atque", "neque"]
+
+# Uppercase regexp
+uppercase = re.compile("^[A-Z]$")
+
+class MemoryzingTokenizer(object):
+    def __init__(self):
+        self.tokens = [
+        ]
+
+    def replacer(self, inp: str):
+        x = inp.replace("v", "u")
+        if len(x) > 3 and x[-3:] == "que" and x not in QVE_NOT_REMOVE:
+            x = x[:-3]
+        return x
+
+    def __call__(self, data: str, lower=True):
+        for sentence in simple_tokenizer(data, lower=lower):
+            new_sentence = []
+            for inp in sentence:
+                # Check first if this is a damn "." after an uppercase letter like L.
+                if inp == "." and new_sentence and uppercase.match(new_sentence[-1]):
+                    _, o_inp, o_out = self.tokens[-1]
+                    self.tokens[-1] = (len(self.tokens) - 1, o_inp+".", o_out+".")
+                    new_sentence[-1] = o_out+"."
+                else:
+                    out = self.replacer(inp)
+                    self.tokens.append((len(self.tokens), inp, out))
+                    new_sentence.append(out)
+            yield new_sentence
+
+
 
 class GlueFormatter(Formatter):
-    HEADERS = ["token", "lemma", "POS", "morph"]
-    MORPH_PART = ["Case", "Numb", "Deg", "Mood", "Tense", "Voice", "Person", ]
+    HEADERS = ["token", "lemma", "POS", "morph", "treated_token"]
+    MORPH_PART = ["Case", "Numb", "Deg", "Mood", "Tense", "Voice", "Person"]
     PONCTU = re.compile("\W")
 
-    def __init__(self, tasks):
+    def __init__(self, tokenizer_memory):
+        super(GlueFormatter, self).__init__([])
+        self.tokenizer_memory = tokenizer_memory
+
+    def __call__(self, tasks):
         super(GlueFormatter, self).__init__(tasks)
         self.pos_tag = "POS"
         if "POS" not in self.tasks and "pos" in self.tasks:
             self.pos_tag = "pos"
+        return self
 
     def format_headers(self):
         return GlueFormatter.HEADERS
@@ -69,11 +108,22 @@ class GlueFormatter(Formatter):
     def format_line(self, token, tags):
         tags = list(tags)
         lemma = tags[self.tasks.index("lemma")]
-        if GlueFormatter.PONCTU.match(lemma):
-            lemma = token
+        index, input_token, out_token = self.tokenizer_memory.tokens.pop(0)
+        if token != out_token:
+            print(self.tokenizer_memory.tokens)
+            raise Exception("The output token does not match our inputs %s : %s" % (token, out_token))
+
+        if GlueFormatter.PONCTU.match(token):
+            return [
+                token,
+                token,
+                "PUNC",
+                "MORPH=empty",
+                token
+            ]
 
         return [
-            token,
+            input_token,
             lemma.upper().replace("U", "V"),
             tags[self.tasks.index(self.pos_tag)],
             "|".join(
@@ -84,9 +134,14 @@ class GlueFormatter(Formatter):
                 for morph_part in GlueFormatter.MORPH_PART
                 if morph_part in self.tasks and
                 tags[self.tasks.index(morph_part)] != "_"
-            ) or "MORPH=empty"
+            ) or "MORPH=empty",
+            out_token
         ]
 
 
 # Add the lemmatizer routes
-bind(app, formatter_class=GlueFormatter, route_path="/api")
+tokenizer = MemoryzingTokenizer()
+bind(app, formatter_class=GlueFormatter(tokenizer), route_path="/api", tokenizer=tokenizer)
+
+if __name__ == "__main__":
+    app.run(debug=True)
