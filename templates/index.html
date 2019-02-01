@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{{ url_for('static', filename='logo.png')}}">
+
+    <title>Deucalion Pie WebApp</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css')}}" rel="stylesheet">
+    <style type="text/css">
+        h1, h2 { color:rgb(189, 5, 45); }
+        .navbar-dark, .btn-primary { background-color : rgb(189, 5, 45)!important; border-color: rgb(189, 5, 45)!important; }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-dark">
+      <div class="container">
+        <a href="{{url_for('.form')}}" class="navbar-brand">Deucalion</a>
+      </div>
+    </nav> 
+    <div class="container">
+      <div class="row" style="margin-top:15px; margin-bottom:15px;">
+        <div class="col-4 offset-2 text-center">
+          <a href="http://www.chartes.psl.eu/"><img height="70" alt="Ecole Nationale des Chartes" src="{{ url_for('static', filename='enc.png')}}"></a>
+        </div>
+        <div class="col-4 text-center">
+          <a href="http://web.philo.ulg.ac.be/lasla">
+            <img height="70" alt="Lasla" src="{{ url_for('static', filename='LogoLASLA2019.jpg')}}">
+          </a>
+        </div>
+      </div>
+      <main class="row">
+        <div class="col-12">
+            <h1>Tag your Latin text</h1>
+            <form class="form" action="{{ url_for('.lemmatize') }}" method="POST">
+                <div class="form-group row">
+                  <div class="col-12">
+                      <textarea required id="data" placeholder="Type or paste your Latin text here" name="data" class="form-control" rows="8"></textarea>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-lg btn-primary">Tag !</button>
+            </form>
+        </div>
+      </main>
+      <div class="row" style="margin-top:15px; margin-bottom:15px; font-size: small;">
+        <div class="col-12">
+          <h2>Bibliography</h2>
+          <p><small>This lemmatizer is provided to you thanks to the data of the LASLA, the software of Emmanuel Manjavacas and Mike Kestemont and some engineering from the École nationale des chartes. If you want to cite them :</small></p>
+          <ul style="font-style: italic; ">
+            <li>D. Longrée,  C. Philippart de Foy & G. Purnelle. « Structures phrastiques et analyse automatique des données morphosyntaxiques : le projet LatSynt », in S. Bolasco, I. Chiari & L. Giuliano (eds), Statistical Analysis of Textual Data, Proceedings of 10th International Conference Journées d'Analyse statistique des Données Textuelles, 9-11 June 2010, Sapienza University of Rome, Rome, LED, pp. 433-442.</li>
+            <li>D. Longrée & C. Poudat, « New Ways of Lemmatizing and Tagging Classical and post-Classical Latin: the LATLEM project of the LASLA », in P. Anreiter & M. Kienpointner (éd.), Proceedings of the 15th International Colloquium on Latin Linguistics, (Innsbrucker Beiträge zur Sprachwissenschaft), Innsbruck, 2010, pp. 683-694.</li>
+            <li>D. Longrée & C. Philippart de Foy & G. Purnelle, « Subordinate clause boundaries and word order in Latin: the contribution of the L.A.S.L.A. syntactic parser project LatSynt », in P. Anreiter & M. Kienpointner, éd.), Proceedings of the 15th International Colloquium on Latin Linguistics, (Innsbrucker Beiträge zur Sprachwissenschaft), Innsbruck, 2010, pp. 673-681.</li>
+            <li>D. Longrée & Poudat C., « Variations langagières et annotation morphosyntaxique du latin classique », TAL, 50 – n° 2/2009, Special issue on "Natural Language Processing and Ancient Languages", pp. 129-148.</li>
+            <li>Enrique Manjavacas & Mike Kestemont. (2019, January 17). emanjavacas/pie v0.1.3 (Version v0.1.3). Zenodo. http://doi.org/10.5281/zenodo.2542537 <b>Check the latest version here :</b><a href="https://doi.org/10.5281/zenodo.1637877">Zenodo DOI</a></li>
+            <li>Thibault Clérice. (2019, February 1). chartes/deucalion-model-lasla: LASLA Latin Lemmatizer - Alpha (Version 0.0.1). Zenodo. http://doi.org/10.5281/zenodo.2554847  <b>Check the latest version here :</b><a href="https://doi.org/10.5281/zenodo.2554846">Zenodo DOI</a></li>
+          </ul>
+          <p>Please remember that <b>corpus creation and software engineering is valid research</b>, so please <b>cite these resources</b> when you use this lemmatizer for your research.</p>
+          <hr />
+          <p>Check our other supported languages :</p>
+          <ul>
+            <li><a href="https://github.com/ponteineptique/deucalion-model-af">Old French</a> - <a href="https://zenodo.org/badge/latestdoi/155197742"><img src="https://zenodo.org/badge/155197742.svg" alt="DOI"></a></li>
+          </ul>
+
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
