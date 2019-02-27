@@ -87,7 +87,7 @@ class MemoryzingTokenizer(object):
 
 
 class GlueFormatter(Formatter):
-    HEADERS = ["token", "lemma", "POS", "morph", "treated_token"]
+    HEADERS = ["form", "lemma", "POS", "morph", "treated_token"]
     MORPH_PART = ["Case", "Numb", "Deg", "Mood", "Tense", "Voice", "Person"]
     PONCTU = re.compile("\W")
 
