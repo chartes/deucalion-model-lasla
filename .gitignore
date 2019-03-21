@@ -2,8 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-pie/
-webapp
+.idea
 
 # C extensions
 *.so

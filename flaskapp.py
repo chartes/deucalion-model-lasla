@@ -40,9 +40,12 @@ Example output :
     .	.	_	PONfrt
 
 """
-from webapp import bind, Formatter
 from flask import Flask, render_template
-from pie.tagger import Tagger, simple_tokenizer
+from pie.webapp import bind, Formatter
+
+from cltk.tokenize.sentence import TokenizeSentence
+from cltk.tokenize.word import WordTokenizer
+
 import re
 
 app = Flask(__name__, static_folder="./statics", template_folder="./templates")
@@ -52,38 +55,37 @@ app = Flask(__name__, static_folder="./statics", template_folder="./templates")
 def form():
     return render_template("index.html")
 
-# Forms where the que should be kept
-QVE_NOT_REMOVE = ["quicumque", "atque", "neque"]
 
 # Uppercase regexp
 uppercase = re.compile("^[A-Z]$")
+
 
 class MemoryzingTokenizer(object):
     def __init__(self):
         self.tokens = [
         ]
 
+        self.sentence_tokenizer = TokenizeSentence("latin")
+        self.word_tokenizer = WordTokenizer("latin")
+
     def replacer(self, inp: str):
-        x = inp.replace("v", "u")
-        if len(x) > 3 and x[-3:] == "que" and x not in QVE_NOT_REMOVE:
-            x = x[:-3]
-        return x
+        inp = inp.replace("U", "V").replace("v", "u").replace("J", "I").replace("j", "i")
+        return inp
 
-    def __call__(self, data: str, lower=True):
-        for sentence in simple_tokenizer(data, lower=lower):
+    def __call__(self, data, lower=True):
+        if lower:
+            data = data.lower()
+
+        for sentence in self.sentence_tokenizer.tokenize_sentences(data):
+            toks = self.word_tokenizer.tokenize(sentence)
             new_sentence = []
-            for inp in sentence:
-                # Check first if this is a damn "." after an uppercase letter like L.
-                if inp == "." and new_sentence and uppercase.match(new_sentence[-1]):
-                    _, o_inp, o_out = self.tokens[-1]
-                    self.tokens[-1] = (len(self.tokens) - 1, o_inp+".", o_out+".")
-                    new_sentence[-1] = o_out+"."
-                else:
-                    out = self.replacer(inp)
-                    self.tokens.append((len(self.tokens), inp, out))
-                    new_sentence.append(out)
-            yield new_sentence
 
+            for tok in toks:
+                out = self.replacer(tok)
+                self.tokens.append((len(self.tokens), tok, out))
+                new_sentence.append(out)
+
+            yield new_sentence
 
 
 class GlueFormatter(Formatter):
@@ -141,7 +143,9 @@ class GlueFormatter(Formatter):
 
 # Add the lemmatizer routes
 tokenizer = MemoryzingTokenizer()
-bind(app, formatter_class=GlueFormatter(tokenizer), route_path="/api", tokenizer=tokenizer)
+bind(app, formatter_class=GlueFormatter(tokenizer), route_path="/api", tokenizer=tokenizer, headers={
+    "X-Accel-Buffering": "no"
+}, batch_size=16)
 
 if __name__ == "__main__":
     app.run(debug=True)
