@@ -37,7 +37,7 @@
       <main class="row">
         <div class="col-12">
             <h1>Tag your Latin text</h1>
-            <form class="form" action="{{ url_for('.lemmatize') }}" method="POST">
+            <form class="form" action="{{ url_for('nlp_pie.main') }}" method="POST">
                 <div class="form-group row">
                   <div class="col-12">
                       <textarea required id="data" placeholder="Type or paste your Latin text here" name="data" class="form-control" rows="8"></textarea>
