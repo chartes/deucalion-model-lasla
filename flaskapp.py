@@ -52,7 +52,7 @@ class MemoryzingTokenizer(object):
 class GlueFormatter(Formatter):
     HEADERS = ["form", "lemma", "POS", "morph", "treated_token"]
     MORPH_PART = ["Case", "Numb", "Deg", "Mood", "Tense", "Voice", "Person"]
-    PONCTU = re.compile("\W")
+    PONCTU = re.compile(r"^\W+$")
 
     def __init__(self, tokenizer_memory):
         super(GlueFormatter, self).__init__([])
@@ -73,7 +73,6 @@ class GlueFormatter(Formatter):
         lemma = tags[self.tasks.index("lemma")]
         index, input_token, out_token = self.tokenizer_memory.tokens.pop(0)
         if token != out_token:
-            print(self.tokenizer_memory.tokens)
             raise Exception("The output token does not match our inputs %s : %s" % (token, out_token))
 
         if GlueFormatter.PONCTU.match(token):
@@ -84,6 +83,8 @@ class GlueFormatter(Formatter):
                 "MORPH=empty",
                 token
             ]
+        elif token.startswith("-"):
+            return [token, token[1:].upper().replace("U", "V"), "CONcoo", "MORPH=empty", token]
 
         return [
             input_token,
@@ -104,7 +105,8 @@ class GlueFormatter(Formatter):
 
 # Add the lemmatizer routes
 tokenizer = MemoryzingTokenizer()
-controller = PieController(model_file="model-json.tar", headers={"X-Accel-Buffering": "no"},
+controller = PieController(model_file="<lemma.split-morph.tar,lemma,Voice,Mood,Deg,Numb,Person,Tense,Case,Gend>"
+                                      "<lemma-pos-morph.tar,pos>", headers={"X-Accel-Buffering": "no"},
                            formatter_class=GlueFormatter(tokenizer),
                            iterator=DataIterator(tokenizer=tokenizer), batch_size=16)
 controller.init_app(app)
