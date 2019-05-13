@@ -25,7 +25,13 @@ For more details about the errors, see the [information](information) folder.
 
 # Install
 
-To run, you'll need to install Docker. Then, you can simply run the following commands :
+To run, you'll need to install Docker. Then, you can simply run the following commands:
+
+```shell
+docker pull ponteineptique/deucalion-model-lasla:latest
+```
+
+or build locally from source (much longer, more freedom in changing some code source):
 
 ```shell
 docker build -t deucalion-lasla:latest .
