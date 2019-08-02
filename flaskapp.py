@@ -84,11 +84,11 @@ class GlueFormatter(Formatter):
                 token
             ]
         elif token.startswith("-"):
-            return [token, token[1:].upper().replace("U", "V"), "CONcoo", "MORPH=empty", token]
+            return [token, token[1:], "CONcoo", "MORPH=empty", token]
 
         return [
             input_token,
-            lemma.upper().replace("U", "V"),
+            lemma,
             tags[self.tasks.index(self.pos_tag)],
             "|".join(
                 "{cat}={tag}".format(
@@ -105,10 +105,11 @@ class GlueFormatter(Formatter):
 
 # Add the lemmatizer routes
 tokenizer = MemoryzingTokenizer()
-controller = PieController(model_file="<lemma.split-morph.tar,lemma,Voice,Mood,Deg,Numb,Person,Tense,Case,Gend>"
-                                      "<lemma-pos-morph.tar,pos>", headers={"X-Accel-Buffering": "no"},
+controller = PieController(model_file="<model.tar,lemma,Voice,Mood,Deg,Numb,Person,Tense,Case,Gend,pos>",
+                           headers={"X-Accel-Buffering": "no"},
                            formatter_class=GlueFormatter(tokenizer),
-                           iterator=DataIterator(tokenizer=tokenizer), batch_size=16)
+                           iterator=DataIterator(tokenizer=tokenizer), batch_size=16
+                           )
 controller.init_app(app)
 
 
