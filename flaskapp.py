@@ -1,4 +1,4 @@
-import re
+import regex as re
 
 from flask import Flask, render_template
 
@@ -6,7 +6,8 @@ from cltk.tokenize.sentence import TokenizeSentence
 from cltk.tokenize.word import WordTokenizer
 
 from flask_pie import PieController
-from flask_pie.utils import Formatter, DataIterator
+from flask_pie.utils import DataIterator
+from flask_pie.formatters.glue import GlueFormatter as SourceGlueFormatter
 
 
 app = Flask(__name__, static_folder="./statics", template_folder="./templates")
@@ -37,6 +38,11 @@ class MemoryzingTokenizer(object):
         if lower:
             data = data.lower()
 
+        # Fix regarding the current issue of apostrophe
+        # https://github.com/cltk/cltk/issues/925#issuecomment-522065530
+        # On the other hand, it creates empty tokens...
+        data = data.replace("'", " ' ")
+
         for sentence in self.sentence_tokenizer.tokenize_sentences(data):
             toks = self.word_tokenizer.tokenize(sentence)
             new_sentence = []
@@ -49,7 +55,7 @@ class MemoryzingTokenizer(object):
             yield new_sentence
 
 
-class GlueFormatter(Formatter):
+class GlueFormatter(SourceGlueFormatter):
     HEADERS = ["form", "lemma", "POS", "morph", "treated_token"]
     MORPH_PART = ["Case", "Numb", "Deg", "Mood", "Tense", "Voice", "Person"]
     PONCTU = re.compile(r"^\W+$")
@@ -58,49 +64,17 @@ class GlueFormatter(Formatter):
         super(GlueFormatter, self).__init__([])
         self.tokenizer_memory = tokenizer_memory
 
-    def __call__(self, tasks):
-        super(GlueFormatter, self).__init__(tasks)
-        self.pos_tag = "POS"
-        if "POS" not in self.tasks and "pos" in self.tasks:
-            self.pos_tag = "pos"
-        return self
-
-    def format_headers(self):
-        return GlueFormatter.HEADERS
-
-    def format_line(self, token, tags):
-        tags = list(tags)
-        lemma = tags[self.tasks.index("lemma")]
-        index, input_token, out_token = self.tokenizer_memory.tokens.pop(0)
-        if token != out_token:
-            raise Exception("The output token does not match our inputs %s : %s" % (token, out_token))
-
-        if GlueFormatter.PONCTU.match(token):
-            return [
-                token,
-                token,
-                "PUNC",
-                "MORPH=empty",
-                token
-            ]
+    def rule_based(cls, token):
+        if cls.PONCTU.match(token):
+            return [token, token, "PUNC", "MORPH=empty", token]
         elif token.startswith("-"):
-            return [token, token[1:], "CONcoo", "MORPH=empty", token]
+            if token == "-ne":
+                lemma = "ne_2"
+            else:
+                lemma = token[1:]
+            return [token, lemma, "CONcoo", "MORPH=empty", token]
 
-        return [
-            input_token,
-            lemma,
-            tags[self.tasks.index(self.pos_tag)],
-            "|".join(
-                "{cat}={tag}".format(
-                    cat=morph_part,
-                    tag=tags[self.tasks.index(morph_part)]
-                )
-                for morph_part in GlueFormatter.MORPH_PART
-                if morph_part in self.tasks and
-                tags[self.tasks.index(morph_part)] != "_"
-            ) or "MORPH=empty",
-            out_token
-        ]
+        return None
 
 
 # Add the lemmatizer routes
@@ -108,7 +82,12 @@ tokenizer = MemoryzingTokenizer()
 controller = PieController(model_file="<model.tar,lemma,Voice,Mood,Deg,Numb,Person,Tense,Case,Gend,pos>",
                            headers={"X-Accel-Buffering": "no"},
                            formatter_class=GlueFormatter(tokenizer),
-                           iterator=DataIterator(tokenizer=tokenizer), batch_size=16
+                           iterator=DataIterator(
+                               tokenizer=tokenizer,
+                               remove_from_input=DataIterator.remove_punctuation
+                           ),
+                           batch_size=16,
+                           force_lower=True
                            )
 controller.init_app(app)
 
