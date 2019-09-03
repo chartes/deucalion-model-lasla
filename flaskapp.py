@@ -62,7 +62,6 @@ class MemoryzingTokenizer(object):
                     self.tokens.append((len(self.tokens), tok, out))
                     new_sentence.append(out)
             if new_sentence:
-                print(new_sentence)
                 yield new_sentence
 
 
