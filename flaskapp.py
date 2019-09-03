@@ -39,7 +39,7 @@ class MemoryzingTokenizer(object):
         self.word_tokenizer = WordTokenizer("latin")
 
     def replacer(self, inp: str):
-        inp = inp.replace("U", "V").replace("v", "u").replace("J", "I").replace("j", "i")
+        inp = inp.replace("U", "V").replace("v", "u").replace("J", "I").replace("j", "i").lower()
         return inp
 
     def __call__(self, data, lower=True):
@@ -98,7 +98,7 @@ controller = PieController(
        remove_from_input=DataIterator.remove_punctuation
     ),
     batch_size=16,
-    force_lower=True,
+    force_lower=False,
     disambiguation=Autocat(autocat_categorizer=group, lemma_key="lemma")
 )
 controller.init_app(app)
