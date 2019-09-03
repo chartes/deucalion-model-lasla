@@ -8,7 +8,13 @@ from cltk.tokenize.word import WordTokenizer
 from flask_pie import PieController
 from flask_pie.utils import DataIterator
 from flask_pie.formatters.glue import GlueFormatter as SourceGlueFormatter
+from flask_pie.disambiguator.autocat import Autocat
+from autocat import NeedsDisambiguation, StraightAutodisambiguation, CategoryAutodisambiguation, GroupAutodisambiguation
 
+pos = CategoryAutodisambiguation.from_file("./latin-pos.json", category_key="pos", lemma_key="lemma")
+straight = StraightAutodisambiguation.from_file("./latin-straight.json", lemma_key="lemma")
+impossible = NeedsDisambiguation.from_file("./latin-needs.json", lemma_key="lemma")
+group = GroupAutodisambiguation(lemma_key="lemma", categorizers=(straight, pos, impossible))
 
 app = Flask(__name__, static_folder="./statics", template_folder="./templates")
 
@@ -20,6 +26,8 @@ def form():
 
 # Uppercase regexp
 uppercase = re.compile("^[A-Z]$")
+add_space_around_punct = re.compile("(\s*)([^\w\s\.])(\s*)")
+normalize_space = re.compile("(\s+)")
 
 
 class MemoryzingTokenizer(object):
@@ -41,18 +49,21 @@ class MemoryzingTokenizer(object):
         # Fix regarding the current issue of apostrophe
         # https://github.com/cltk/cltk/issues/925#issuecomment-522065530
         # On the other hand, it creates empty tokens...
-        data = data.replace("'", " ' ")
+        data = add_space_around_punct.sub(" \g<2> ", data)
+        data = normalize_space.sub(" ", data)
 
         for sentence in self.sentence_tokenizer.tokenize_sentences(data):
             toks = self.word_tokenizer.tokenize(sentence)
             new_sentence = []
 
             for tok in toks:
-                out = self.replacer(tok)
-                self.tokens.append((len(self.tokens), tok, out))
-                new_sentence.append(out)
-
-            yield new_sentence
+                if tok:
+                    out = self.replacer(tok)
+                    self.tokens.append((len(self.tokens), tok, out))
+                    new_sentence.append(out)
+            if new_sentence:
+                print(new_sentence)
+                yield new_sentence
 
 
 class GlueFormatter(SourceGlueFormatter):
@@ -69,7 +80,7 @@ class GlueFormatter(SourceGlueFormatter):
             return [token, token, "PUNC", "MORPH=empty", token]
         elif token.startswith("-"):
             if token == "-ne":
-                lemma = "ne_2"
+                lemma = "ne2"
             else:
                 lemma = token[1:]
             return [token, lemma, "CONcoo", "MORPH=empty", token]
@@ -79,16 +90,18 @@ class GlueFormatter(SourceGlueFormatter):
 
 # Add the lemmatizer routes
 tokenizer = MemoryzingTokenizer()
-controller = PieController(model_file="<model.tar,lemma,Voice,Mood,Deg,Numb,Person,Tense,Case,Gend,pos>",
-                           headers={"X-Accel-Buffering": "no"},
-                           formatter_class=GlueFormatter(tokenizer),
-                           iterator=DataIterator(
-                               tokenizer=tokenizer,
-                               remove_from_input=DataIterator.remove_punctuation
-                           ),
-                           batch_size=16,
-                           force_lower=True
-                           )
+controller = PieController(
+    model_file="<model.tar,lemma,Voice,Mood,Deg,Numb,Person,Tense,Case,Gend,pos>",
+    headers={"X-Accel-Buffering": "no"},
+    formatter_class=GlueFormatter(tokenizer),
+    iterator=DataIterator(
+       tokenizer=tokenizer,
+       remove_from_input=DataIterator.remove_punctuation
+    ),
+    batch_size=16,
+    force_lower=True,
+    disambiguation=Autocat(autocat_categorizer=group, lemma_key="lemma")
+)
 controller.init_app(app)
 
 
