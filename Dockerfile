@@ -1,9 +1,10 @@
-FROM ponteineptique/pie-flask:v0.0.4
+FROM ponteineptique/pie-flask:v0.0.6
 
 RUN apt-get install -y gcc
 
 COPY templates ./templates
 COPY statics ./statics
+COPY modules ./modules
 COPY flaskapp.py *.tar boot.sh cltk_install.py requirements.txt *.json ./
 RUN chmod +x boot.sh
 

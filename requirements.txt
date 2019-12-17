@@ -1,2 +1,2 @@
-flask_pie>=0.0.5
+flask_pie>=0.0.6
 cltk==0.1.111
