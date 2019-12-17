@@ -1,4 +1,4 @@
-FROM ponteineptique/pie-flask:v0.0.6
+FROM ponteineptique/pie-flask:v0.0.7
 
 RUN apt-get install -y gcc
 
