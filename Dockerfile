@@ -13,6 +13,8 @@ RUN pip3 install cltk && python3 cltk_install.py
 # Small checkup
 # RUN ls
 
+RUN pip3 install --upgrade flask_pie==0.0.7
+
 EXPOSE 5000
 ENTRYPOINT ["/app/boot.sh"]
 
