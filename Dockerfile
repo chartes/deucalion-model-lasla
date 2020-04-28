@@ -5,10 +5,10 @@ RUN apt-get install -y gcc
 COPY templates ./templates
 COPY statics ./statics
 COPY modules ./modules
-COPY flaskapp.py *.tar boot.sh requirements.txt *.json ./
+COPY flaskapp.py boot.sh ./
 RUN chmod +x boot.sh
 
-RUN pie-extended download lasla && pip install https://github.com/PonteIneptique/cltk/archive/latin_clitics_exceptions.zip --upgrade && pie-extended install-addons lasla
+RUN pie-extended download lasla && pip install cltk==0.1.117 && pie-extended install-addons lasla
 
 # Small checkup
 # RUN ls

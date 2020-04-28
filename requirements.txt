@@ -1,2 +1,2 @@
 flask_pie>=0.0.7
-https://github.com/PonteIneptique/cltk/archive/latin_clitics_exceptions.zip
+cltk==0.1.117
