@@ -25,6 +25,17 @@ For more details about the errors, see the [information](information) folder.
 
 # Install
 
+## Locally, without docker: 
+
+```shell script
+pip install -r requirements.txt
+pie-extended download lasla # Downloads the model
+pie-extended install-addons lasla # Install required addons
+```
+then run with `python flaskapp.py`
+
+## With docker 
+
 To run, you'll need to install Docker. Then, you can simply run the following commands:
 
 ```shell
