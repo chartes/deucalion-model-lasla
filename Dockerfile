@@ -1,14 +1,14 @@
-FROM ponteineptique/pie-flask:v0.0.7
+FROM ponteineptique/pie-flask:v0.1.0
 
 RUN apt-get install -y gcc
 
 COPY templates ./templates
 COPY statics ./statics
 COPY modules ./modules
-COPY flaskapp.py *.tar boot.sh cltk_install.py requirements.txt *.json ./
+COPY flaskapp.py boot.sh ./
 RUN chmod +x boot.sh
 
-RUN pip3 install cltk && python3 cltk_install.py
+RUN pie-extended download lasla && pip install cltk==0.1.117 && pie-extended install-addons lasla
 
 # Small checkup
 # RUN ls
